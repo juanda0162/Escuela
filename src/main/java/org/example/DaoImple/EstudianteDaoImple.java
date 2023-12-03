@@ -1,42 +1,41 @@
 package org.example.DaoImple;
-
 import org.example.Dao.EstudianteDao;
 import org.example.Dto.Estudiante;
 import org.example.GUI.Conexion;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 
 public class EstudianteDaoImple extends EstudianteDao {
     @Override
     public int insert(Estudiante obj) throws Exception {
         int id = 0;
-        String matricula = null;
         try {
             Conexion objConexion = Conexion.getOrCreate();
             Connection conn = objConexion.conectarPostgreSQL();
-            String query = "INSERT INTO public.estudiantes (nombres, apellidos, fecha_nacimiento, carnet_identidad) VALUES (?, ?, ?, ?) RETURNING id_estudiante, matricula";
-            try (PreparedStatement stmt = conn.prepareStatement(query)) {
-                stmt.setString(1, obj.getNombres());
-                stmt.setString(2, obj.getApellidos());
-                stmt.setDate(3, new java.sql.Date(obj.getFechaNacimiento().getTime()));
-                stmt.setString(4, obj.getCarnetIdentidad());
+            String query = "INSERT INTO estudiantes (nombres, apellidos, fecha_nacimiento, carnet_identidad, id_tutor, id_curso) VALUES (?, ?, ?, ?, ?, ?)";
+            PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        id = rs.getInt("id_estudiante");
-                        matricula = rs.getString("matricula");
-                    } else {
-                        throw new Exception("Error al obtener el id_estudiante y la matrícula generados");
-                    }
-                }
+            stmt.setString(1, obj.getNombres());
+            stmt.setString(2, obj.getApellidos());
+            stmt.setDate(3, obj.getFechaNacimiento());
+            stmt.setString(4, obj.getCarnetIdentidad());
+            stmt.setInt(5, obj.getIdTutor());
+            stmt.setInt(6, obj.getIdCurso());
+
+            stmt.executeUpdate();
+
+            ResultSet rs = stmt.getGeneratedKeys();
+            if (rs.next()) {
+                id = rs.getInt(1);
             }
 
-            obj.setMatricula(matricula); // Asignar la matrícula al objeto Estudiante
+            if (id == 0) {
+                throw new Exception("El registro no pudo ser insertado");
+            }
+
+            stmt.close();
+            objConexion.desconectar();
         } catch (SQLException e) {
             e.printStackTrace();
             throw new Exception("Error al insertar el estudiante en la base de datos");
@@ -50,22 +49,25 @@ public class EstudianteDaoImple extends EstudianteDao {
         try {
             Conexion objConexion = Conexion.getOrCreate();
             Connection conn = objConexion.conectarPostgreSQL();
-            String query = "UPDATE estudiantes SET nombres=?, apellidos=? WHERE id_estudiante=?";
-            try (PreparedStatement stmt = conn.prepareStatement(query)) {
-                stmt.setInt(3, obj.getIdEstudiante());
-                stmt.setString(1, obj.getNombres());
-                stmt.setString(2, obj.getApellidos());
+            String query = "UPDATE estudiantes SET nombres=?, apellidos=?, fecha_nacimiento=?, carnet_identidad=?, id_tutor=?, id_curso=? WHERE id_estudiante=?";
+            PreparedStatement stmt = conn.prepareStatement(query);
 
-                int rowsAffected = stmt.executeUpdate();
-                if (rowsAffected == 0) {
-                    throw new SQLException("El estudiante no existe en la base de datos");
-                }
-            }
-            return get(obj.getIdEstudiante()); // Devolver el objeto actualizado
+            stmt.setString(1, obj.getNombres());
+            stmt.setString(2, obj.getApellidos());
+            stmt.setDate(3, obj.getFechaNacimiento());
+            stmt.setString(4, obj.getCarnetIdentidad());
+            stmt.setInt(5, obj.getIdTutor());
+            stmt.setInt(6, obj.getIdCurso());
+            stmt.setInt(7, obj.getIdEstudiante());
+
+            stmt.executeUpdate();
+            stmt.close();
+            objConexion.desconectar();
         } catch (SQLException e) {
             e.printStackTrace();
             throw new Exception("Error al actualizar el estudiante en la base de datos");
         }
+        return null;
     }
 
     @Override
@@ -74,10 +76,13 @@ public class EstudianteDaoImple extends EstudianteDao {
             Conexion objConexion = Conexion.getOrCreate();
             Connection conn = objConexion.conectarPostgreSQL();
             String query = "DELETE FROM estudiantes WHERE id_estudiante=?";
-            try (PreparedStatement stmt = conn.prepareStatement(query)) {
-                stmt.setInt(1, id);
-                stmt.executeUpdate();
-            }
+            PreparedStatement stmt = conn.prepareStatement(query);
+
+            stmt.setInt(1, id);
+
+            stmt.executeUpdate();
+            stmt.close();
+            objConexion.desconectar();
         } catch (SQLException e) {
             e.printStackTrace();
             throw new Exception("Error al eliminar el estudiante en la base de datos");
@@ -90,19 +95,28 @@ public class EstudianteDaoImple extends EstudianteDao {
             Conexion objConexion = Conexion.getOrCreate();
             Connection conn = objConexion.conectarPostgreSQL();
             String query = "SELECT * FROM estudiantes WHERE id_estudiante=?";
-            try (PreparedStatement stmt = conn.prepareStatement(query)) {
-                stmt.setInt(1, id);
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        Estudiante estudiante = new Estudiante();
-                        estudiante.setIdEstudiante(rs.getInt("id_estudiante"));
-                        estudiante.setNombres(rs.getString("nombres"));
-                        estudiante.setApellidos(rs.getString("apellidos"));
-                        return estudiante;
-                    } else {
-                        throw new Exception("No se encontró el estudiante en la base de datos");
-                    }
-                }
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                Estudiante estudiante = new Estudiante();
+                estudiante.setIdEstudiante(rs.getInt("id_estudiante"));
+                estudiante.setNombres(rs.getString("nombres"));
+                estudiante.setApellidos(rs.getString("apellidos"));
+                estudiante.setFechaNacimiento(rs.getDate("fecha_nacimiento"));
+                estudiante.setCarnetIdentidad(rs.getString("carnet_identidad"));
+                estudiante.setIdTutor(rs.getInt("id_tutor"));
+                estudiante.setIdCurso(rs.getInt("id_curso"));
+                rs.close();
+                stmt.close();
+                objConexion.desconectar();
+                return estudiante;
+            } else {
+                rs.close();
+                stmt.close();
+                objConexion.desconectar();
+                throw new Exception("No se encontró el estudiante en la base de datos");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -116,19 +130,26 @@ public class EstudianteDaoImple extends EstudianteDao {
             Conexion objConexion = Conexion.getOrCreate();
             Connection conn = objConexion.conectarPostgreSQL();
             String query = "SELECT * FROM estudiantes";
-            try (PreparedStatement stmt = conn.prepareStatement(query)) {
-                try (ResultSet rs = stmt.executeQuery()) {
-                    ArrayList<Estudiante> estudiantes = new ArrayList<>();
-                    while (rs.next()) {
-                        Estudiante estudiante = new Estudiante();
-                        estudiante.setIdEstudiante(rs.getInt("id_estudiante"));
-                        estudiante.setNombres(rs.getString("nombres"));
-                        estudiante.setApellidos(rs.getString("apellidos"));
-                        estudiantes.add(estudiante);
-                    }
-                    return estudiantes;
-                }
+            PreparedStatement stmt = conn.prepareStatement(query);
+            ResultSet rs = stmt.executeQuery();
+
+            ArrayList<Estudiante> estudiantes = new ArrayList<>();
+            while (rs.next()) {
+                Estudiante estudiante = new Estudiante();
+                estudiante.setIdEstudiante(rs.getInt("id_estudiante"));
+                estudiante.setNombres(rs.getString("nombres"));
+                estudiante.setApellidos(rs.getString("apellidos"));
+                estudiante.setFechaNacimiento(rs.getDate("fecha_nacimiento"));
+                estudiante.setCarnetIdentidad(rs.getString("carnet_identidad"));
+                estudiante.setIdTutor(rs.getInt("id_tutor"));
+                estudiante.setIdCurso(rs.getInt("id_curso"));
+                estudiantes.add(estudiante);
             }
+
+            rs.close();
+            stmt.close();
+            objConexion.desconectar();
+            return estudiantes;
         } catch (SQLException e) {
             e.printStackTrace();
             throw new Exception("Error al obtener la lista de estudiantes de la base de datos");

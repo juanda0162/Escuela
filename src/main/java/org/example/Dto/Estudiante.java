@@ -1,6 +1,5 @@
 package org.example.Dto;
-
-import java.util.Date;
+import java.sql.Date;
 
 public class Estudiante {
     private int idEstudiante;
@@ -10,7 +9,6 @@ public class Estudiante {
     private String carnetIdentidad;
     private int idTutor;
     private int idCurso;
-    private String matricula;
 
     public Estudiante(String nombres, String apellidos, Date fechaNacimiento, String carnetIdentidad, int idTutor, int idCurso) {
         this.nombres = nombres;
@@ -78,27 +76,5 @@ public class Estudiante {
 
     public void setIdCurso(int idCurso) {
         this.idCurso = idCurso;
-    }
-
-    public String getMatricula() {
-        return matricula;
-    }
-
-    public void setMatricula(String matricula) {
-        this.matricula = matricula;
-    }
-
-    @Override
-    public String toString() {
-        return "{" +
-                "\"idEstudiante\":" + idEstudiante +
-                ", \"nombres\":\"" + nombres + "\"" +
-                ", \"apellidos\":\"" + apellidos + "\"" +
-                ", \"fechaNacimiento\":\"" + fechaNacimiento + "\"" +
-                ", \"carnetIdentidad\":\"" + carnetIdentidad + "\"" +
-                ", \"idTutor\":" + idTutor +
-                ", \"idCurso\":" + idCurso +
-                ", \"Matricula\":" + matricula +
-                '}';
     }
 }

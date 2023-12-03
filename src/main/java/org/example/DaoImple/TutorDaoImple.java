@@ -1,26 +1,26 @@
 package org.example.DaoImple;
 
-import org.example.Dao.MaestroDao;
-import org.example.Dto.Maestro;
+import org.example.Dao.TutorDao;
+import org.example.Dto.Tutor;
 import org.example.GUI.Conexion;
+
 import java.sql.*;
 import java.util.ArrayList;
 
-public class MaestroDaoImple extends MaestroDao {
+public class TutorDaoImple extends TutorDao {
     @Override
-    public int insert(Maestro obj) throws Exception {
+    public int insert(Tutor obj) throws Exception {
         int id = 0;
         try {
             Conexion objConexion = Conexion.getOrCreate();
             Connection conn = objConexion.conectarPostgreSQL();
-            String query = "INSERT INTO maestros (nombres, apellidos, fecha_contratacion, carnet_identidad, id_materia) VALUES (?, ?, ?, ?, ?)";
+            String query = "INSERT INTO tutores (nombres, apellidos, telefono, carnet_identidad) VALUES (?, ?, ?, ?)";
             PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 
             stmt.setString(1, obj.getNombres());
             stmt.setString(2, obj.getApellidos());
-            stmt.setDate(3, obj.getFechaContratacion());
+            stmt.setString(3, obj.getTelefono());
             stmt.setString(4, obj.getCarnetIdentidad());
-            stmt.setInt(5, obj.getIdMateria());
 
             stmt.executeUpdate();
 
@@ -37,33 +37,32 @@ public class MaestroDaoImple extends MaestroDao {
             objConexion.desconectar();
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new Exception("Error al insertar el maestro en la base de datos");
+            throw new Exception("Error al insertar el tutor en la base de datos");
         }
 
         return id;
     }
 
     @Override
-    public Maestro update(Maestro obj) throws Exception {
+    public Tutor update(Tutor obj) throws Exception {
         try {
             Conexion objConexion = Conexion.getOrCreate();
             Connection conn = objConexion.conectarPostgreSQL();
-            String query = "UPDATE maestros SET nombres=?, apellidos=?, fecha_contratacion=?, carnet_identidad=?, id_materia=? WHERE id_maestro=?";
+            String query = "UPDATE tutores SET nombres=?, apellidos=?, telefono=?, carnet_identidad=? WHERE id_tutor=?";
             PreparedStatement stmt = conn.prepareStatement(query);
 
             stmt.setString(1, obj.getNombres());
             stmt.setString(2, obj.getApellidos());
-            stmt.setDate(3, obj.getFechaContratacion());
+            stmt.setString(3, obj.getTelefono());
             stmt.setString(4, obj.getCarnetIdentidad());
-            stmt.setInt(5, obj.getIdMateria());
-            stmt.setInt(6, obj.getIdMaestro());
+            stmt.setInt(5, obj.getIdTutor());
 
             stmt.executeUpdate();
             stmt.close();
             objConexion.desconectar();
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new Exception("Error al actualizar el maestro en la base de datos");
+            throw new Exception("Error al actualizar el tutor en la base de datos");
         }
         return null;
     }
@@ -73,7 +72,7 @@ public class MaestroDaoImple extends MaestroDao {
         try {
             Conexion objConexion = Conexion.getOrCreate();
             Connection conn = objConexion.conectarPostgreSQL();
-            String query = "DELETE FROM maestros WHERE id_maestro=?";
+            String query = "DELETE FROM tutores WHERE id_tutor=?";
             PreparedStatement stmt = conn.prepareStatement(query);
 
             stmt.setInt(1, id);
@@ -83,72 +82,70 @@ public class MaestroDaoImple extends MaestroDao {
             objConexion.desconectar();
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new Exception("Error al eliminar el maestro en la base de datos");
+            throw new Exception("Error al eliminar el tutor en la base de datos");
         }
     }
 
     @Override
-    public Maestro get(int id) throws Exception {
+    public Tutor get(int id) throws Exception {
         try {
             Conexion objConexion = Conexion.getOrCreate();
             Connection conn = objConexion.conectarPostgreSQL();
-            String query = "SELECT * FROM maestros WHERE id_maestro=?";
+            String query = "SELECT * FROM tutores WHERE id_tutor=?";
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                Maestro maestro = new Maestro();
-                maestro.setIdMaestro(rs.getInt("id_maestro"));
-                maestro.setNombres(rs.getString("nombres"));
-                maestro.setApellidos(rs.getString("apellidos"));
-                maestro.setFechaContratacion(rs.getDate("fecha_contratacion"));
-                maestro.setCarnetIdentidad(rs.getString("carnet_identidad"));
-                maestro.setIdMateria(rs.getInt("id_materia"));
+                Tutor tutor = new Tutor();
+                tutor.setIdTutor(rs.getInt("id_tutor"));
+                tutor.setNombres(rs.getString("nombres"));
+                tutor.setApellidos(rs.getString("apellidos"));
+                tutor.setTelefono(rs.getString("telefono"));
+                tutor.setCarnetIdentidad(rs.getString("carnet_identidad"));
                 rs.close();
                 stmt.close();
                 objConexion.desconectar();
-                return maestro;
+                return tutor;
             } else {
                 rs.close();
                 stmt.close();
                 objConexion.desconectar();
-                throw new Exception("No se encontró el maestro en la base de datos");
+                throw new Exception("No se encontró el tutor en la base de datos");
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new Exception("Error al obtener el maestro de la base de datos");
+            throw new Exception("Error al obtener el tutor de la base de datos");
         }
     }
 
     @Override
-    public ArrayList<Maestro> getList() throws Exception {
+    public ArrayList<Tutor> getList() throws Exception {
         try {
             Conexion objConexion = Conexion.getOrCreate();
             Connection conn = objConexion.conectarPostgreSQL();
-            String query = "SELECT * FROM maestros";
+            String query = "SELECT * FROM tutores";
             PreparedStatement stmt = conn.prepareStatement(query);
             ResultSet rs = stmt.executeQuery();
 
-            ArrayList<Maestro> maestros = new ArrayList<>();
+            ArrayList<Tutor> tutores = new ArrayList<>();
             while (rs.next()) {
-                Maestro maestro = new Maestro();
-                maestro.setIdMaestro(rs.getInt("id_maestro"));
-                maestro.setNombres(rs.getString("nombres"));
-                maestro.setApellidos(rs.getString("apellidos"));
-                maestro.setFechaContratacion(rs.getDate("fecha_contratacion"));
-                maestro.setCarnetIdentidad(rs.getString("carnet_identidad"));
-                maestro.setIdMateria(rs.getInt("id_materia"));
-                maestros.add(maestro);
+                Tutor tutor = new Tutor();
+                tutor.setIdTutor(rs.getInt("id_tutor"));
+                tutor.setNombres(rs.getString("nombres"));
+                tutor.setApellidos(rs.getString("apellidos"));
+                tutor.setTelefono(rs.getString("telefono"));
+                tutor.setCarnetIdentidad(rs.getString("carnet_identidad"));
+                tutores.add(tutor);
             }
 
             rs.close();
             stmt.close();
             objConexion.desconectar();
-            return maestros;
+            return tutores;
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new Exception("Error al obtener la lista de maestros de la base de datos");
+            throw new Exception("Error al obtener la lista de tutores de la base de datos");
         }
     }
 }
